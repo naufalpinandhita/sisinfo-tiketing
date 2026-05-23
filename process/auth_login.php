@@ -12,43 +12,30 @@ if (empty($_POST['email']) || empty($_POST['password'])) {
 $email = $_POST['email'];
 $password = $_POST['password'];
 
-$query = "SELECT * FROM users WHERE email = ?";
-$stmt = mysqli_prepare($conn, $query);
-if (!$stmt) {
-    $error = urlencode("Terjadi kesalahan sistem.");
-    header("Location: ../login.php?error=" . $error);
-    exit();
-}
-mysqli_stmt_bind_param($stmt, 's', $email);
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
+$stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
+$stmt->execute([$email]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (mysqli_num_rows($result) > 0 ){
-    $user = mysqli_fetch_assoc($result);
-
-    if (password_verify($password, $user['password'])){
-        $_SESSION['user_id'] = $user['user_id'];
+if ($user) {
+    if (password_verify($password, $user['password'])) {
+        $_SESSION['user_id'] = $user['id_user'];
         $_SESSION['role'] = $user['role'];
-        
+
         $success = urlencode("Login Berhasil");
 
-        if ($user['role'] == 'admin'){
+        if ($user['role'] == 'admin') {
             header("Location: ../admin/dashboard.php?success=" . $success);
         } else {
             header("Location: ../user/index.php?success=" . $success);
         }
+        exit();
     } else {
         $error = urlencode("Password Salah!");
         header("Location: ../login.php?error=" . $error);
+        exit();
     }
-}
-else {
+} else {
     $error = urlencode("Akun tidak ditemukan, silakan daftar!");
     header("Location: ../login.php?error=" . $error);
-    mysqli_stmt_close($stmt);
     exit();
 }
-
-mysqli_stmt_close($stmt);
-mysqli_close($conn);
-exit();

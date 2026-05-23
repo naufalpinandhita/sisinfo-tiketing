@@ -1,6 +1,7 @@
 <?php
 session_start();
-if ($role != 'admin'){
+if (!isset($_SESSION['role']) || $_SESSION['role'] != 'admin') {
     header('Location: ../index.php');
+    exit();
 }
 ?>

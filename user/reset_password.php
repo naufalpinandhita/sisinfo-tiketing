@@ -6,34 +6,35 @@ if (!isset($_SESSION['username'])) {
     exit;
 }
 
+$error = null;
+$success = null;
+
 if (isset($_POST['submit'])){
     $username = $_SESSION['username'];
     $old_pass = $_POST['old_password'];
     $new_pass = $_POST['new_password'];
     $confirm_pass = $_POST['confirm_password'];
 
-    $result = mysqli_query($koneksi, "SELECT * FROM users WHERE username = '$username'");
-    if (mysqli_num_rows($result) == 0) {
+    $stmt = $conn->prepare("SELECT * FROM users WHERE nama = ?");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$user) {
         $error = "Username tidak ditemukan!";
     } elseif ($new_pass != $confirm_pass) {
         $error = "Konfirmasi password tidak cocok!";
+    } elseif (!password_verify($old_pass, $user['password'])) {
+        $error = "Password lama salah!";
     } else {
-        $hash = md5($old_pass);
-        $user = mysqli_fetch_assoc($result);
-        if ($user['password'] != $hash) {
-            $error = "Password lama salah!";
-        } else {
-            $hash_new = md5($new_pass);
-            mysqli_query($koneksi, "UPDATE users SET password = '$hash_new' WHERE username = '$username'");
-            $success = "Password berhasil direset. Silakan login kembali."; // Hapus sesi dan arahkan ke halaman login
-            session_destroy();
-            header("Location: ../login.php?success=" . urlencode($success));
-            exit;
-        }
+        $hash_new = password_hash($new_pass, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("UPDATE users SET password = ? WHERE nama = ?");
+        $stmt->execute([$hash_new, $username]);
+        $success = "Password berhasil direset. Silakan login kembali.";
+        session_destroy();
+        header("Location: ../login.php?success=" . urlencode($success));
+        exit;
     }
 }
-
-$error = isset($_GET['error']) ? $_GET['error'] : null;
 ?>
 
 <!DOCTYPE html>
