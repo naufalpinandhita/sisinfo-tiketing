@@ -21,6 +21,9 @@ if (!isset($active_menu)) $active_menu = '';
                 <a class="nav-link <?php echo $active_menu === 'checkin' ? 'active' : ''; ?>" href="/sisinfo-tiketing/admin/checkin.php">
                     <i class="bi bi-qr-code-scan"></i> Check-in
                 </a>
+                <a class="nav-link <?php echo $active_menu === 'checkin_report' ? 'active' : ''; ?>" href="/sisinfo-tiketing/admin/checkin_report.php">
+                    <i class="bi bi-clipboard-check"></i> Laporan Check-in
+                </a>
                 <a class="nav-link <?php echo $active_menu === 'laporan' ? 'active' : ''; ?>" href="/sisinfo-tiketing/admin/laporan.php">
                     <i class="bi bi-file-earmark-text"></i> Laporan
                 </a>
