@@ -1,7 +1,10 @@
 <?php
 session_start();
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 'admin') {
-    header('Location: ../index.php');
-    exit();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../login.php');
+    exit;
+}
+if ($_SESSION['role'] !== 'admin') {
+    die('Akses ditolak');
 }
 ?>

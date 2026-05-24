@@ -1,34 +1,46 @@
 <?php
 session_start();
-include '../config/database.php';
+require_once '../config/helper.php';
+require_once '../config/database.php';
 
-if (empty($_POST['username']) || empty($_POST['email']) || empty($_POST['password'])) {
-    $error = urlencode("Semua field harus diisi!");
-    header("Location: ../register.php?error=" . $error);
+validate_csrf();
+
+if (empty($_POST['nama']) || empty($_POST['email']) || empty($_POST['password'])) {
+    flash_message('error', 'Semua field harus diisi!');
+    header('Location: ../register.php');
     exit();
 }
 
-$username = $_POST['username'];
-$email    = $_POST['email'];
+$nama     = sanitize($_POST['nama']);
+$email    = sanitize($_POST['email']);
 $password = $_POST['password'];
 
-$hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    flash_message('error', 'Format email tidak valid!');
+    header('Location: ../register.php');
+    exit();
+}
 
-$stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
+if (strlen($password) < 6) {
+    flash_message('error', 'Password minimal 6 karakter!');
+    header('Location: ../register.php');
+    exit();
+}
+
+$hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+
+$stmt = $conn->prepare("SELECT id_user FROM users WHERE email = ?");
 $stmt->execute([$email]);
 
 if ($stmt->rowCount() > 0) {
-    $error = urlencode("Email sudah digunakan!");
-    header("Location: ../register.php?error=" . $error);
+    flash_message('error', 'Email sudah digunakan!');
+    header('Location: ../register.php');
     exit();
 }
 
-$stmt = $conn->prepare("INSERT INTO users (nama, email, password) VALUES (?, ?, ?)");
-$stmt->execute([$username, $email, $hashedPassword]);
+$stmt = $conn->prepare("INSERT INTO users (nama, email, password, role) VALUES (?, ?, ?, 'user')");
+$stmt->execute([$nama, $email, $hashedPassword]);
 
-$_SESSION['username'] = $username;
-$_SESSION['email'] = $email;
-
-$success = urlencode("Registrasi berhasil! Silakan login.");
-header("Location: ../login.php?success=" . $success);
+flash_message('success', 'Registrasi berhasil! Silakan login.');
+header('Location: ../login.php');
 exit();
