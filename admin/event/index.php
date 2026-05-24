@@ -1,55 +1,140 @@
 <?php
 session_start();
-require "../../config/database.php";
+require_once '../../config/helper.php';
+require_once '../../config/database.php';
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 'admin') {
-    header('Location: ../index.php');
-    exit();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../../login.php');
+    exit;
+}
+if ($_SESSION['role'] !== 'admin') {
+    die('Akses ditolak');
 }
 
-$query = "SELECT e.*, v.nama_venue FROM event e JOIN venue v ON e.id_venue = v.id_venue ORDER BY e.id_event DESC";
-$events = $conn->query($query);
-$success = isset($_GET['success']) ? urldecode($_GET['success']) : '';
+$limit = 10;
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $limit;
+
+$search = isset($_GET['search']) ? sanitize($_GET['search']) : '';
+
+$where = '';
+$params = [];
+if ($search !== '') {
+    $where = "WHERE e.nama_event LIKE ?";
+    $params[] = '%' . $search . '%';
+}
+
+$countStmt = $conn->prepare("SELECT COUNT(*) FROM event e $where");
+$countStmt->execute($params);
+$total_rows = (int)$countStmt->fetchColumn();
+$total_pages = (int)ceil($total_rows / $limit);
+if ($page < 1) $page = 1;
+if ($page > $total_pages && $total_pages > 0) $page = $total_pages;
+$offset = ($page - 1) * $limit;
+
+$sql = "SELECT e.*, v.nama_venue FROM event e JOIN venue v ON e.id_venue = v.id_venue $where ORDER BY e.id_event DESC LIMIT ? OFFSET ?";
+$stmt = $conn->prepare($sql);
+$paramIdx = 1;
+foreach ($params as $p) { $stmt->bindValue($paramIdx++, $p); }
+$stmt->bindValue($paramIdx++, $limit, PDO::PARAM_INT);
+$stmt->bindValue($paramIdx++, $offset, PDO::PARAM_INT);
+$stmt->execute();
+$events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$page_title = 'Daftar Event';
+$active_menu = 'event';
+include '../header.php';
+include '../sidebar.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Event</title>
-</head>
-<body>
-    <h1>Daftar Event</h1>
-    <a href="create.php">Tambah Event</a>
 
-    <?php if ($success): ?>
-        <p><?php echo htmlspecialchars($success); ?></p>
-    <?php endif; ?>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0 fw-brand">Daftar Event</h4>
+    <a href="create.php" class="btn btn-primary-custom"><i class="bi bi-plus-lg me-1"></i> Tambah Event</a>
+</div>
 
-    <table border='1'>
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Nama Event</th>
-                <th>Tanggal</th>
-                <th>Venue</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php $no = 1; while ($row = $events->fetch(PDO::FETCH_ASSOC)): ?>
-            <tr>
-                <td><?php echo $no++; ?></td>
-                <td><?php echo htmlspecialchars($row['nama_event']); ?></td>
-                <td><?php echo htmlspecialchars($row['tanggal']); ?></td>
-                <td><?php echo htmlspecialchars($row['nama_venue']); ?></td>
-                <td>
-                    <a href="edit.php?id_event=<?php echo urlencode($row['id_event']); ?>">Edit</a>
-                    <a href="action.php?act=delete&id_event=<?php echo urlencode($row['id_event']); ?>" onclick="return confirm('Yakin ingin menghapus?')">Hapus</a>
-                </td>
-            </tr>
-            <?php endwhile; ?>
-        </tbody>
-    </table>
-</body>
-</html>
+<?php echo show_flash(); ?>
+
+<div class="card card-clean p-3 mb-4">
+    <form method="GET" class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" class="form-control" placeholder="Cari nama event..." value="<?php echo htmlspecialchars($search); ?>">
+                <button type="submit" class="btn btn-primary-custom">Cari</button>
+            </div>
+        </div>
+        <?php if ($search): ?>
+        <div class="col-md-2">
+            <a href="index.php" class="btn btn-outline-secondary">Reset</a>
+        </div>
+        <?php endif; ?>
+    </form>
+</div>
+
+<div class="card card-clean">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>No</th>
+                    <th>Poster</th>
+                    <th>Nama Event</th>
+                    <th>Tanggal</th>
+                    <th>Venue</th>
+                    <th class="text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (count($events) === 0): ?>
+                <tr><td colspan="6" class="text-center text-muted py-4">Tidak ada data event.</td></tr>
+                <?php else: ?>
+                <?php $no = $offset + 1; foreach ($events as $row): ?>
+                <tr>
+                    <td><?php echo $no++; ?></td>
+                    <td>
+                        <?php if (!empty($row['poster_url'])): ?>
+                        <img src="../../assets/images/<?php echo htmlspecialchars($row['poster_url']); ?>" alt="Poster" class="poster-thumb">
+                        <?php else: ?>
+                        <span class="text-muted">-</span>
+                        <?php endif; ?>
+                    </td>
+                    <td><?php echo htmlspecialchars($row['nama_event']); ?></td>
+                    <td><?php echo htmlspecialchars($row['tanggal']); ?></td>
+                    <td><?php echo htmlspecialchars($row['nama_venue']); ?></td>
+                    <td class="text-center">
+                        <a href="edit.php?id_event=<?php echo urlencode($row['id_event']); ?>" class="btn btn-sm btn-warning text-white"><i class="bi bi-pencil-square"></i></a>
+                        <a href="action.php?act=delete&id_event=<?php echo urlencode($row['id_event']); ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus event ini?')"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<?php if ($total_pages > 1): ?>
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
+            <a class="page-link" href="?page=1<?php echo $search ? '&search=' . urlencode($search) : ''; ?>">First</a>
+        </li>
+        <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
+            <a class="page-link" href="?page=<?php echo $page - 1; ?><?php echo $search ? '&search=' . urlencode($search) : ''; ?>">Previous</a>
+        </li>
+        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+        <li class="page-item <?php echo $i === $page ? 'active' : ''; ?>">
+            <a class="page-link" href="?page=<?php echo $i; ?><?php echo $search ? '&search=' . urlencode($search) : ''; ?>"><?php echo $i; ?></a>
+        </li>
+        <?php endfor; ?>
+        <li class="page-item <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">
+            <a class="page-link" href="?page=<?php echo $page + 1; ?><?php echo $search ? '&search=' . urlencode($search) : ''; ?>">Next</a>
+        </li>
+        <li class="page-item <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">
+            <a class="page-link" href="?page=<?php echo $total_pages; ?><?php echo $search ? '&search=' . urlencode($search) : ''; ?>">Last</a>
+        </li>
+    </ul>
+</nav>
+<?php endif; ?>
+
+<?php include '../footer.php'; ?>
