@@ -116,6 +116,83 @@ body {
     font-size: 1.4rem;
 }
 
+/* User Layout */
+.user-main {
+    min-height: calc(100vh - 56px - 60px);
+    padding: 32px 0;
+}
+
+.user-footer {
+    border-top: 1px solid #dee2e6;
+    background: #fff;
+}
+
+/* Event Card */
+.event-card {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: #fff;
+}
+
+.event-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.event-card .card-img-top {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.event-card .card-body {
+    padding: 20px;
+}
+
+.event-card .event-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.event-card .event-venue {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Detail Event */
+.detail-poster {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.ticket-row {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    background: #fff;
+}
+
+/* Navbar active state */
+.navbar-brand-custom .nav-link.active {
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+.search-form-w {
+    max-width: 300px;
+}
+
+.qty-input {
+    width: 80px;
+}
+
 /* Admin Layout */
 .admin-navbar {
     background-color: #1932b9;
