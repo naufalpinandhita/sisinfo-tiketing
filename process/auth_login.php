@@ -1,41 +1,44 @@
 <?php
 session_start();
-include '../config/database.php';
+require_once '../config/helper.php';
+require_once '../config/database.php';
+
+validate_csrf();
 
 if (empty($_POST['email']) || empty($_POST['password'])) {
-    $error = urlencode("Email dan password harus diisi!");
-    header("Location: ../login.php?error=" . $error);
+    flash_message('error', 'Email dan password harus diisi!');
+    header('Location: ../login.php');
     exit();
 }
 
-
-$email = $_POST['email'];
+$email = sanitize($_POST['email']);
 $password = $_POST['password'];
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    flash_message('error', 'Format email tidak valid!');
+    header('Location: ../login.php');
+    exit();
+}
 
 $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
 $stmt->execute([$email]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if ($user) {
-    if (password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id_user'];
-        $_SESSION['role'] = $user['role'];
+if ($user && password_verify($password, $user['password'])) {
+    $_SESSION['user_id'] = $user['id_user'];
+    $_SESSION['role'] = $user['role'];
+    $_SESSION['email'] = $user['email'];
 
-        $success = urlencode("Login Berhasil");
+    flash_message('success', 'Login berhasil!');
 
-        if ($user['role'] == 'admin') {
-            header("Location: ../admin/dashboard.php?success=" . $success);
-        } else {
-            header("Location: ../user/index.php?success=" . $success);
-        }
-        exit();
+    if ($user['role'] === 'admin') {
+        header('Location: ../admin/dashboard.php');
     } else {
-        $error = urlencode("Password Salah!");
-        header("Location: ../login.php?error=" . $error);
-        exit();
+        header('Location: ../user/home.php');
     }
+    exit();
 } else {
-    $error = urlencode("Akun tidak ditemukan, silakan daftar!");
-    header("Location: ../login.php?error=" . $error);
+    flash_message('error', 'Email atau password salah!');
+    header('Location: ../login.php');
     exit();
 }

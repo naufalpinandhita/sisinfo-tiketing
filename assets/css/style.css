@@ -1,0 +1,79 @@
+/* =====================================================
+   Event Ticketing - Global Styles
+   Primary: #1932b9
+   ===================================================== */
+
+/* Base */
+body {
+    background-color: #f4f6f9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #1c1c1c;
+}
+
+/* Auth Containers */
+.auth-container {
+    max-width: 400px;
+    margin: 80px auto;
+}
+
+.auth-container-wide {
+    max-width: 420px;
+    margin: 60px auto;
+}
+
+/* Cards */
+.card-clean {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Buttons */
+.btn-primary-custom {
+    background-color: #1932b9;
+    border-color: #1932b9;
+    color: #fff;
+}
+
+.btn-primary-custom:hover {
+    background-color: #142a9e;
+    border-color: #142a9e;
+    color: #fff;
+}
+
+/* Forms */
+.form-control-custom:focus {
+    border-color: #1932b9;
+    box-shadow: 0 0 0 0.2rem rgba(25, 50, 185, 0.25);
+}
+
+/* Text & Links */
+.text-brand {
+    color: #1932b9;
+}
+
+.link-brand {
+    color: #1932b9;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.link-brand:hover {
+    color: #142a9e;
+    text-decoration: underline;
+}
+
+/* Navbar */
+.navbar-brand-custom {
+    background-color: #1932b9 !important;
+}
+
+.navbar-brand-custom .navbar-brand,
+.navbar-brand-custom .nav-link {
+    color: #fff !important;
+}
+
+/* Utility */
+.fw-brand {
+    font-weight: 700;
+}
