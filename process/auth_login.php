@@ -28,6 +28,7 @@ if ($user && password_verify($password, $user['password'])) {
     $_SESSION['user_id'] = $user['id_user'];
     $_SESSION['role'] = $user['role'];
     $_SESSION['email'] = $user['email'];
+    $_SESSION['nama'] = $user['nama'];
 
     flash_message('success', 'Login berhasil!');
 
