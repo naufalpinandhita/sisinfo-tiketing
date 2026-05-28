@@ -1,5 +1,10 @@
 <?php
 if (!isset($active_menu)) $active_menu = '';
+try {
+    $pendingPayments = (int)$conn->query("SELECT COUNT(*) FROM orders WHERE status = 'waiting_confirmation'")->fetchColumn();
+} catch (PDOException $e) {
+    $pendingPayments = 0;
+}
 ?>
         <aside class="admin-sidebar" id="adminSidebar">
             <nav class="nav flex-column py-2">
@@ -17,6 +22,12 @@ if (!isset($active_menu)) $active_menu = '';
                 </a>
                 <a class="nav-link <?php echo $active_menu === 'voucher' ? 'active' : ''; ?>" href="/sisinfo-tiketing/admin/voucher/index.php">
                     <i class="bi bi-tag"></i> Voucher
+                </a>
+                <a class="nav-link <?php echo $active_menu === 'payment' ? 'active' : ''; ?>" href="/sisinfo-tiketing/admin/payment/index.php">
+                    <i class="bi bi-credit-card"></i> Pembayaran
+                    <?php if ($pendingPayments > 0): ?>
+                    <span class="badge bg-warning text-dark ms-1"><?php echo $pendingPayments; ?></span>
+                    <?php endif; ?>
                 </a>
                 <a class="nav-link <?php echo $active_menu === 'checkin' ? 'active' : ''; ?>" href="/sisinfo-tiketing/admin/checkin.php">
                     <i class="bi bi-qr-code-scan"></i> Check-in

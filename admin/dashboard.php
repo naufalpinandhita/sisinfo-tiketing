@@ -6,12 +6,20 @@ require_once '../config/database.php';
 if (!isset($_SESSION['user_id'])) { header('Location: ../login.php'); exit; }
 if ($_SESSION['role'] !== 'admin') { die('Akses ditolak'); }
 
+// Auto-expire overdue orders
+if (file_exists(__DIR__ . '/../process/order_expire.php')) {
+    ob_start();
+    require_once __DIR__ . '/../process/order_expire.php';
+    ob_end_clean();
+}
+
 // Stat cards
-$totalUsers     = (int)$conn->query("SELECT COUNT(*) FROM users WHERE role = 'user'")->fetchColumn();
-$totalOrders    = (int)$conn->query("SELECT COUNT(*) FROM orders")->fetchColumn();
-$totalRevenue   = (int)$conn->query("SELECT COALESCE(SUM(total), 0) FROM orders WHERE status = 'paid'")->fetchColumn();
-$totalTiketSold = (int)$conn->query("SELECT COALESCE(SUM(qty), 0) FROM order_detail od JOIN orders o ON od.id_order = o.id_order WHERE o.status = 'paid'")->fetchColumn();
-$totalCheckin   = (int)$conn->query("SELECT COUNT(*) FROM attendee WHERE status_checkin = 'sudah'")->fetchColumn();
+$totalUsers         = (int)$conn->query("SELECT COUNT(*) FROM users WHERE role = 'user'")->fetchColumn();
+$totalOrders        = (int)$conn->query("SELECT COUNT(*) FROM orders")->fetchColumn();
+$totalRevenue       = (int)$conn->query("SELECT COALESCE(SUM(total), 0) FROM orders WHERE status = 'paid'")->fetchColumn();
+$totalTiketSold     = (int)$conn->query("SELECT COALESCE(SUM(qty), 0) FROM order_detail od JOIN orders o ON od.id_order = o.id_order WHERE o.status = 'paid'")->fetchColumn();
+$totalCheckin       = (int)$conn->query("SELECT COUNT(*) FROM attendee WHERE status_checkin = 'sudah'")->fetchColumn();
+$pendingPayments    = (int)$conn->query("SELECT COUNT(*) FROM orders WHERE status = 'waiting_confirmation'")->fetchColumn();
 
 // Revenue chart (monthly, last 12 months)
 $revenueMonthly = $conn->query("
@@ -147,6 +155,26 @@ include 'sidebar.php';
                 </div>
             </div>
         </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+        <a href="/sisinfo-tiketing/admin/payment/index.php" class="text-decoration-none">
+            <div class="card card-clean p-3 h-100 <?php echo $pendingPayments > 0 ? 'border-warning' : ''; ?>">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 icon-circle">
+                        <i class="bi bi-credit-card fs-4 <?php echo $pendingPayments > 0 ? 'text-warning' : 'text-brand'; ?>"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="text-muted small">Verifikasi Bayar</div>
+                        <div class="fw-bold fs-5">
+                            <?php echo number_format($pendingPayments); ?>
+                            <?php if ($pendingPayments > 0): ?>
+                            <span class="badge bg-warning text-dark ms-1 small">pending</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
     </div>
 </div>
 

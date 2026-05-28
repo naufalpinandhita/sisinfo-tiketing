@@ -29,7 +29,12 @@ function show_flash(): string {
     if (empty($_SESSION['flash'])) return '';
     $flash = $_SESSION['flash'];
     unset($_SESSION['flash']);
-    $class = $flash['type'] === 'success' ? 'alert-success' : 'alert-danger';
+    $class = match($flash['type']) {
+        'success' => 'alert-success',
+        'warning' => 'alert-warning',
+        'info'    => 'alert-info',
+        default   => 'alert-danger',
+    };
     return '<div class="alert ' . $class . ' alert-dismissible fade show" role="alert">'
          . sanitize($flash['message'])
          . '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';

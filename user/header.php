@@ -18,14 +18,7 @@ $_search_val = isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '';
 </head>
 <body class="has-bottom-nav">
 
-<?php if (isset($_SESSION['flash_message'])): ?>
-<div class="position-fixed top-0 start-50 translate-middle-x mt-3 px-3 flash-toast">
-    <div class="alert alert-<?php echo $_SESSION['flash_type'] === 'error' ? 'danger' : 'success'; ?> alert-dismissible fade show shadow-sm">
-        <?php echo htmlspecialchars($_SESSION['flash_message']); unset($_SESSION['flash_message'], $_SESSION['flash_type']); ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-</div>
-<?php endif; ?>
+<?php echo show_flash(); ?>
 
 <!-- Announcement Bar (desktop) -->
 <div class="announcement-bar d-none d-lg-block">

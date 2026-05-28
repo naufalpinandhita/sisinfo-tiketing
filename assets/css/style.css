@@ -1126,3 +1126,37 @@ body {
 }
 .dropdown-menu-hdr { min-width: 200px; }
 .dropdown-menu-profile { min-width: 180px; }
+
+/* ── Payment Page ────────────────────────────────── */
+.countdown-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1932b9 0%, #2557d6 100%);
+    border-radius: 12px;
+    padding: 14px 28px;
+    margin: 4px 0;
+}
+.countdown-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+}
+.bank-info-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 18px 20px;
+}
+.bank-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e5e7eb;
+}
+.bank-info-row:last-child { border-bottom: none; }
+.bir-label { color: #6b7280; font-size: 0.85rem; }
+.bir-value { font-size: 1rem; }

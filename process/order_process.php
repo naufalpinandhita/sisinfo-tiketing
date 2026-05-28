@@ -94,25 +94,20 @@ if ($voucher_code !== '') {
 
 $total = max(0, $subtotal - $voucher_discount);
 
-function generate_unique_code($conn) {
-    $date = date('Ymd');
-    $check = $conn->prepare("SELECT 1 FROM attendee WHERE kode_tiket = ?");
-    do {
-        $random = substr(strtoupper(bin2hex(random_bytes(5))), 0, 8);
-        $code = 'EVT-' . $date . '-' . $random;
-        $check->execute([$code]);
-    } while ($check->fetch());
-    return $code;
-}
-
 try {
     $conn->beginTransaction();
 
+    // Generate invoice code
+    $datePrefix = date('Ymd');
+    $seqStmt = $conn->query("SELECT COUNT(*)+1 FROM orders WHERE DATE(tanggal_order) = CURDATE()");
+    $seq = (int)$seqStmt->fetchColumn();
+    $invoice_code = 'INV-' . $datePrefix . '-' . str_pad($seq, 5, '0', STR_PAD_LEFT);
+
     $stmtOrder = $conn->prepare("
-        INSERT INTO orders (id_user, total, status, id_voucher)
-        VALUES (?, ?, 'paid', ?)
+        INSERT INTO orders (id_user, invoice_code, total, status, id_voucher, expired_at)
+        VALUES (?, ?, ?, 'pending_payment', ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))
     ");
-    $stmtOrder->execute([$user_id, $total, $id_voucher]);
+    $stmtOrder->execute([$user_id, $invoice_code, $total, $id_voucher]);
     $id_order = (int)$conn->lastInsertId();
 
     $stmtDetail = $conn->prepare("
@@ -120,30 +115,8 @@ try {
         VALUES (?, ?, ?, ?)
     ");
 
-    // Check if nama_attendee column exists (migration_v2.sql may not have run yet)
-    try {
-        $conn->query("SELECT nama_attendee FROM attendee LIMIT 1");
-        $has_nama = true;
-    } catch (PDOException $e) {
-        $has_nama = false;
-    }
-    $stmtAttendeeNamed = $has_nama
-        ? $conn->prepare("INSERT INTO attendee (id_detail, kode_tiket, status_checkin, nama_attendee) VALUES (?, ?, 'belum', ?)")
-        : $conn->prepare("INSERT INTO attendee (id_detail, kode_tiket, status_checkin) VALUES (?, ?, 'belum')");
-
     foreach ($items as $item) {
         $stmtDetail->execute([$id_order, $item['id_tiket'], $item['qty'], $item['subtotal']]);
-        $id_detail = (int)$conn->lastInsertId();
-
-        for ($i = 0; $i < $item['qty']; $i++) {
-            $kode = generate_unique_code($conn);
-            $nama = $attendee_names[$item['id_tiket']][$i] ?? $user_name;
-            if ($has_nama) {
-                $stmtAttendeeNamed->execute([$id_detail, $kode, $nama]);
-            } else {
-                $stmtAttendeeNamed->execute([$id_detail, $kode]);
-            }
-        }
     }
 
     if ($id_voucher) {
@@ -153,8 +126,11 @@ try {
 
     $conn->commit();
 
-    flash_message('success', 'Pemesanan berhasil!');
-    header('Location: ../user/order_confirm.php?id=' . $id_order);
+    // Store attendee names in session for use after payment approval
+    $_SESSION['pending_attendees'][$id_order] = $attendee_names;
+
+    flash_message('success', 'Pesanan berhasil dibuat! Silakan lakukan pembayaran.');
+    header('Location: ../user/payment.php?id=' . $id_order);
     exit;
 } catch (Exception $e) {
     $conn->rollBack();

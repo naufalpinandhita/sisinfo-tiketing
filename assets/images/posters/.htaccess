@@ -1,0 +1,7 @@
+# Prevent PHP execution in upload directory
+php_flag engine off
+
+# Deny direct access to PHP files
+<FilesMatch "\.php$">
+    Deny from all
+</FilesMatch>

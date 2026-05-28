@@ -19,15 +19,26 @@ function uploadPoster(array $file): string|false {
         mkdir($uploadDir, 0755, true);
     }
 
-    $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!in_array($file['type'], $allowed)) {
+    if ($file['error'] !== UPLOAD_ERR_OK) {
         return false;
     }
     if ($file['size'] > 2 * 1024 * 1024) {
         return false;
     }
 
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $allowedExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowedExt)) {
+        return false;
+    }
+
+    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($file['tmp_name']);
+    $allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!in_array($mime, $allowedMime)) {
+        return false;
+    }
+
     $filename = uniqid('poster_') . '.' . $ext;
     $dest = $uploadDir . $filename;
 
@@ -69,7 +80,7 @@ if ($act === 'insert') {
     if (!empty($_FILES['poster']['tmp_name'])) {
         $posterUrl = uploadPoster($_FILES['poster']);
         if ($posterUrl === false) {
-            flash_message('error', 'Gagal upload poster. Pastikan format JPG/PNG/GIF dan maks 2MB.');
+            flash_message('error', 'Gagal upload poster. Pastikan format JPG/PNG/GIF/WEBP dan maks 2MB.');
             header('Location: create.php');
             exit;
         }
@@ -110,7 +121,7 @@ if ($act === 'update') {
     if (!empty($_FILES['poster']['tmp_name'])) {
         $newPoster = uploadPoster($_FILES['poster']);
         if ($newPoster === false) {
-            flash_message('error', 'Gagal upload poster. Pastikan format JPG/PNG/GIF dan maks 2MB.');
+            flash_message('error', 'Gagal upload poster. Pastikan format JPG/PNG/GIF/WEBP dan maks 2MB.');
             header('Location: edit.php?id_event=' . $idEvent);
             exit;
         }

@@ -73,14 +73,18 @@ try {
 
 function txStatusBadge($s) {
     return match($s) {
-        'paid'   => ['d1fae5','065f46','Payment Success'],
-        'pending'=> ['fef3c7','92400e','Pending'],
-        'cancel' => ['fee2e2','991b1b','Canceled'],
-        default  => ['e5e7eb','374151', ucfirst($s)],
+        'paid'                  => ['d1fae5','065f46','Payment Success'],
+        'waiting_confirmation'  => ['fef3c7','92400e','Menunggu Verifikasi'],
+        'pending_payment'       => ['fef3c7','92400e','Menunggu Pembayaran'],
+        'rejected'              => ['fee2e2','991b1b','Pembayaran Ditolak'],
+        'expired'               => ['fee2e2','991b1b','Kadaluarsa'],
+        'pending'               => ['fef3c7','92400e','Pending'],
+        'cancel'                => ['fee2e2','991b1b','Canceled'],
+        default                 => ['e5e7eb','374151', ucfirst($s)],
     };
 }
 [$bgc, $clr, $lbl] = txStatusBadge($order['status']);
-$invoice_no = 'INV-' . str_pad($order['id_order'], 6, '0', STR_PAD_LEFT);
+$invoice_no = $order['invoice_code'] ?? ('INV-' . str_pad($order['id_order'], 6, '0', STR_PAD_LEFT));
 
 $page_title  = 'Detail Transaksi';
 $active_menu = 'history';
@@ -207,7 +211,19 @@ include 'header.php';
 
             <!-- Action Buttons -->
             <div class="d-flex flex-column gap-2">
-                <?php if (count($codes) > 0): ?>
+                <?php if ($order['status'] === 'pending_payment'): ?>
+                <a href="payment.php?id=<?php echo $id_order; ?>" class="btn btn-warning">
+                    <i class="bi bi-credit-card me-1"></i> Lakukan Pembayaran
+                </a>
+                <?php elseif ($order['status'] === 'waiting_confirmation'): ?>
+                <a href="payment.php?id=<?php echo $id_order; ?>" class="btn btn-outline-warning">
+                    <i class="bi bi-clock me-1"></i> Lihat Status Pembayaran
+                </a>
+                <?php elseif ($order['status'] === 'rejected'): ?>
+                <a href="payment.php?id=<?php echo $id_order; ?>" class="btn btn-danger">
+                    <i class="bi bi-arrow-repeat me-1"></i> Upload Ulang Bukti
+                </a>
+                <?php elseif ($order['status'] === 'paid' && count($codes) > 0): ?>
                 <a href="tickets.php" class="btn btn-primary-custom">
                     <i class="bi bi-qr-code-scan me-1"></i> Lihat E-Tiket
                 </a>

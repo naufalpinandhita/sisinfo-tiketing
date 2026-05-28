@@ -74,18 +74,26 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 function statusBadgeClass($s) {
     return match($s) {
-        'paid'   => 'paid',
-        'pending'=> 'pending',
-        'cancel' => 'cancel',
-        default  => 'pending',
+        'paid'                  => 'paid',
+        'waiting_confirmation'  => 'pending',
+        'pending_payment'       => 'pending',
+        'rejected'              => 'cancel',
+        'expired'               => 'cancel',
+        'pending'               => 'pending',
+        'cancel'                => 'cancel',
+        default                 => 'pending',
     };
 }
 function statusBadgeLabel($s) {
     return match($s) {
-        'paid'   => 'Payment Success',
-        'pending'=> 'Pending',
-        'cancel' => 'Canceled',
-        default  => ucfirst($s),
+        'paid'                  => 'Payment Success',
+        'waiting_confirmation'  => 'Menunggu Verifikasi',
+        'pending_payment'       => 'Menunggu Pembayaran',
+        'rejected'              => 'Ditolak',
+        'expired'               => 'Kadaluarsa',
+        'pending'               => 'Pending',
+        'cancel'                => 'Canceled',
+        default                 => ucfirst($s),
     };
 }
 
