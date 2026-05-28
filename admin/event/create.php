@@ -40,6 +40,15 @@ include '../sidebar.php';
             <div class="form-text">Tanggal tidak boleh di masa lalu.</div>
         </div>
         <div class="mb-3">
+            <label for="jam" class="form-label">Jam Mulai</label>
+            <input type="time" class="form-control" id="jam" name="jam">
+            <div class="form-text">Opsional. Contoh: 19:00</div>
+        </div>
+        <div class="mb-3">
+            <label for="deskripsi" class="form-label">Deskripsi Event</label>
+            <textarea class="form-control" id="deskripsi" name="deskripsi" rows="4" placeholder="Tuliskan deskripsi singkat event..."></textarea>
+        </div>
+        <div class="mb-3">
             <label for="id_venue" class="form-label">Venue <span class="text-danger">*</span></label>
             <select class="form-select" id="id_venue" name="id_venue" required>
                 <option value="">-- Pilih Venue --</option>

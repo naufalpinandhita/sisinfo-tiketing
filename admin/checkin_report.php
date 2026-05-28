@@ -44,7 +44,7 @@ foreach ($rows as $r) {
 }
 
 $page_title = 'Laporan Check-in';
-$active_menu = 'checkin';
+$active_menu = 'checkin_report';
 include 'header.php';
 include 'sidebar.php';
 ?>

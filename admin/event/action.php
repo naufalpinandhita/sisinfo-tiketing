@@ -51,6 +51,8 @@ if ($act === 'insert') {
     $namaEvent = sanitize($_POST['nama_event'] ?? '');
     $tanggal   = $_POST['tanggal'] ?? '';
     $idVenue   = (int)($_POST['id_venue'] ?? 0);
+    $jam       = sanitize($_POST['jam'] ?? '');
+    $deskripsi = sanitize($_POST['deskripsi'] ?? '');
 
     if ($namaEvent === '' || $tanggal === '' || $idVenue < 1) {
         flash_message('error', 'Semua field wajib diisi.');
@@ -73,8 +75,8 @@ if ($act === 'insert') {
         }
     }
 
-    $stmt = $conn->prepare("INSERT INTO event (nama_event, tanggal, poster_url, id_venue) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$namaEvent, $tanggal, $posterUrl, $idVenue]);
+    $stmt = $conn->prepare("INSERT INTO event (nama_event, tanggal, jam, deskripsi, poster_url, id_venue) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$namaEvent, $tanggal, $jam ?: null, $deskripsi ?: null, $posterUrl, $idVenue]);
 
     flash_message('success', 'Event berhasil ditambahkan.');
     header('Location: index.php');
@@ -86,6 +88,8 @@ if ($act === 'update') {
     $namaEvent = sanitize($_POST['nama_event'] ?? '');
     $tanggal   = $_POST['tanggal'] ?? '';
     $idVenue   = (int)($_POST['id_venue'] ?? 0);
+    $jam       = sanitize($_POST['jam'] ?? '');
+    $deskripsi = sanitize($_POST['deskripsi'] ?? '');
 
     if ($idEvent < 1 || $namaEvent === '' || $tanggal === '' || $idVenue < 1) {
         flash_message('error', 'Semua field wajib diisi.');
@@ -114,8 +118,8 @@ if ($act === 'update') {
         $posterUrl = $newPoster;
     }
 
-    $stmt = $conn->prepare("UPDATE event SET nama_event = ?, tanggal = ?, poster_url = ?, id_venue = ? WHERE id_event = ?");
-    $stmt->execute([$namaEvent, $tanggal, $posterUrl, $idVenue, $idEvent]);
+    $stmt = $conn->prepare("UPDATE event SET nama_event = ?, tanggal = ?, jam = ?, deskripsi = ?, poster_url = ?, id_venue = ? WHERE id_event = ?");
+    $stmt->execute([$namaEvent, $tanggal, $jam ?: null, $deskripsi ?: null, $posterUrl, $idVenue, $idEvent]);
 
     flash_message('success', 'Event berhasil diupdate.');
     header('Location: index.php');

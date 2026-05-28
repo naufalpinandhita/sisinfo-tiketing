@@ -13,10 +13,12 @@ if ($_SESSION['role'] !== 'user') {
 
 validate_csrf();
 
-$id_event = (int)($_POST['id_event'] ?? 0);
-$qty_input = $_POST['qty'] ?? [];
-$voucher_code = sanitize($_POST['voucher_code'] ?? '');
-$user_id = $_SESSION['user_id'];
+$id_event       = (int)($_POST['id_event'] ?? 0);
+$qty_input      = $_POST['qty'] ?? [];
+$voucher_code   = sanitize($_POST['voucher_code'] ?? '');
+$attendee_names = $_POST['attendee_names'] ?? [];
+$user_id        = $_SESSION['user_id'];
+$user_name      = $_SESSION['nama'] ?? null;
 
 if ($id_event < 1) {
     flash_message('error', 'Event tidak valid.');
@@ -117,10 +119,17 @@ try {
         INSERT INTO order_detail (id_order, id_tiket, qty, subtotal)
         VALUES (?, ?, ?, ?)
     ");
-    $stmtAttendee = $conn->prepare("
-        INSERT INTO attendee (id_detail, kode_tiket, status_checkin)
-        VALUES (?, ?, 'belum')
-    ");
+
+    // Check if nama_attendee column exists (migration_v2.sql may not have run yet)
+    try {
+        $conn->query("SELECT nama_attendee FROM attendee LIMIT 1");
+        $has_nama = true;
+    } catch (PDOException $e) {
+        $has_nama = false;
+    }
+    $stmtAttendeeNamed = $has_nama
+        ? $conn->prepare("INSERT INTO attendee (id_detail, kode_tiket, status_checkin, nama_attendee) VALUES (?, ?, 'belum', ?)")
+        : $conn->prepare("INSERT INTO attendee (id_detail, kode_tiket, status_checkin) VALUES (?, ?, 'belum')");
 
     foreach ($items as $item) {
         $stmtDetail->execute([$id_order, $item['id_tiket'], $item['qty'], $item['subtotal']]);
@@ -128,7 +137,12 @@ try {
 
         for ($i = 0; $i < $item['qty']; $i++) {
             $kode = generate_unique_code($conn);
-            $stmtAttendee->execute([$id_detail, $kode]);
+            $nama = $attendee_names[$item['id_tiket']][$i] ?? $user_name;
+            if ($has_nama) {
+                $stmtAttendeeNamed->execute([$id_detail, $kode, $nama]);
+            } else {
+                $stmtAttendeeNamed->execute([$id_detail, $kode]);
+            }
         }
     }
 

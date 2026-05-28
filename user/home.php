@@ -3,85 +3,117 @@ session_start();
 require_once '../config/helper.php';
 require_once '../config/database.php';
 
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login.php');
-    exit;
-}
-if ($_SESSION['role'] !== 'user') {
-    die('Akses ditolak');
-}
+if (!isset($_SESSION['user_id'])) { header('Location: ../login.php'); exit; }
+if ($_SESSION['role'] !== 'user')  { die('Akses ditolak'); }
 
 $search = isset($_GET['search']) ? sanitize($_GET['search']) : '';
 
+$sql = "
+    SELECT e.*, v.nama_venue, v.alamat,
+        (SELECT MIN(harga) FROM tiket WHERE id_event = e.id_event) as harga_min
+    FROM event e
+    JOIN venue v ON e.id_venue = v.id_venue
+";
 if ($search !== '') {
-    $stmt = $conn->prepare("
-        SELECT e.*, v.nama_venue
-        FROM event e
-        JOIN venue v ON e.id_venue = v.id_venue
-        WHERE e.nama_event LIKE ? OR v.nama_venue LIKE ?
-        ORDER BY e.tanggal ASC
-    ");
+    $sql .= " WHERE e.nama_event LIKE ? OR v.nama_venue LIKE ?";
     $like = '%' . $search . '%';
+}
+$sql .= " ORDER BY e.tanggal ASC";
+
+if ($search !== '') {
+    $stmt = $conn->prepare($sql);
     $stmt->execute([$like, $like]);
 } else {
-    $stmt = $conn->query("
-        SELECT e.*, v.nama_venue
-        FROM event e
-        JOIN venue v ON e.id_venue = v.id_venue
-        ORDER BY e.tanggal ASC
-    ");
+    $stmt = $conn->query($sql);
 }
 $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$page_title = 'Event';
+$page_title  = 'Event';
 $active_menu = 'home';
 include 'header.php';
 ?>
 
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0 fw-brand">Katalog Event</h4>
-        <form method="GET" class="d-flex gap-2 search-form-w">
-            <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" name="search" class="form-control" placeholder="Cari event..." value="<?php echo htmlspecialchars($search); ?>">
-            </div>
+<!-- Banner Carousel -->
+<?php $banners = array_slice(array_filter($events, fn($e) => !empty($e['poster_url'])), 0, 5); ?>
+<?php if (count($banners) > 0): ?>
+<div id="bannerCarousel" class="carousel slide banner-carousel mb-0" data-bs-ride="carousel" data-bs-interval="4000">
+    <div class="carousel-indicators">
+        <?php foreach ($banners as $idx => $b): ?>
+        <button type="button" data-bs-target="#bannerCarousel" data-bs-slide-to="<?php echo $idx; ?>"
+            class="<?php echo $idx === 0 ? 'active' : ''; ?>"></button>
+        <?php endforeach; ?>
+    </div>
+    <div class="carousel-inner">
+        <?php foreach ($banners as $idx => $b): ?>
+        <div class="carousel-item <?php echo $idx === 0 ? 'active' : ''; ?>">
+            <a href="detail_event.php?id=<?php echo urlencode($b['id_event']); ?>">
+                <img src="/sisinfo-tiketing/assets/images/<?php echo htmlspecialchars($b['poster_url']); ?>"
+                     class="d-block w-100" alt="<?php echo htmlspecialchars($b['nama_event']); ?>">
+            </a>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+    </button>
+</div>
+<?php endif; ?>
+
+<!-- Mobile Search Bar -->
+<div class="container d-lg-none mt-3 mb-1">
+    <form method="GET" action="home.php">
+        <div class="input-group">
+            <input type="text" name="search" class="form-control" placeholder="Cari event..." value="<?php echo htmlspecialchars($search); ?>">
+            <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
             <?php if ($search): ?>
             <a href="home.php" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
             <?php endif; ?>
-        </form>
-    </div>
+        </div>
+    </form>
+</div>
 
-    <div class="row g-4">
-        <?php if (count($events) === 0): ?>
-        <div class="col-12 text-center text-muted py-5">
-            <i class="bi bi-calendar-x fs-1 mb-3 d-block"></i>
-            <p>Tidak ada event yang tersedia.</p>
-        </div>
-        <?php else: ?>
-        <?php foreach ($events as $e): ?>
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card event-card h-100">
-                <?php if (!empty($e['poster_url'])): ?>
-                <img src="/sisinfo-tiketing/assets/images/<?php echo htmlspecialchars($e['poster_url']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($e['nama_event']); ?>">
-                <?php else: ?>
-                <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center">
-                    <i class="bi bi-image text-white fs-1"></i>
-                </div>
-                <?php endif; ?>
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title fw-brand"><?php echo htmlspecialchars($e['nama_event']); ?></h5>
-                    <div class="event-date mb-1"><i class="bi bi-calendar-event me-1"></i> <?php echo htmlspecialchars($e['tanggal']); ?></div>
-                    <div class="event-venue mb-3"><i class="bi bi-geo-alt me-1"></i> <?php echo htmlspecialchars($e['nama_venue']); ?></div>
-                    <div class="mt-auto">
-                        <a href="detail_event.php?id=<?php echo urlencode($e['id_event']); ?>" class="btn btn-primary-custom w-100">Lihat Detail</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php endforeach; ?>
-        <?php endif; ?>
+<!-- Event Grid -->
+<div class="container">
+    <?php if ($search): ?>
+    <h5 class="section-heading">Hasil pencarian: "<?php echo htmlspecialchars($search); ?>"</h5>
+    <?php else: ?>
+    <h5 class="section-heading">Event</h5>
+    <?php endif; ?>
+
+    <?php if (count($events) === 0): ?>
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-calendar-x fs-1 mb-3 d-block"></i>
+        <p>Tidak ada event yang ditemukan.</p>
+        <?php if ($search): ?><a href="home.php" class="btn btn-outline-secondary btn-sm">Lihat Semua Event</a><?php endif; ?>
     </div>
+    <?php else: ?>
+    <div class="event-grid">
+        <?php foreach ($events as $e): ?>
+        <a href="detail_event.php?id=<?php echo urlencode($e['id_event']); ?>" class="event-grid-card">
+            <?php if (!empty($e['poster_url'])): ?>
+            <img src="/sisinfo-tiketing/assets/images/<?php echo htmlspecialchars($e['poster_url']); ?>"
+                 class="eg-poster" alt="<?php echo htmlspecialchars($e['nama_event']); ?>">
+            <?php else: ?>
+            <div class="eg-poster-ph"><i class="bi bi-image"></i></div>
+            <?php endif; ?>
+            <div class="eg-body">
+                <div class="eg-title"><?php echo htmlspecialchars($e['nama_event']); ?></div>
+                <div class="eg-date"><?php echo date('d M Y', strtotime($e['tanggal'])); ?></div>
+                <div class="eg-venue"><?php echo htmlspecialchars($e['nama_venue']); ?> | <?php echo htmlspecialchars($e['alamat'] ?? ''); ?></div>
+                <div class="eg-price-from">Mulai Dari</div>
+                <?php if (($e['harga_min'] ?? 0) == 0): ?>
+                <div class="eg-price free">Gratis</div>
+                <?php else: ?>
+                <div class="eg-price">Rp <?php echo number_format($e['harga_min']); ?></div>
+                <?php endif; ?>
+            </div>
+        </a>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <?php include 'footer.php'; ?>
